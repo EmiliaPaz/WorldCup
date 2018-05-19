@@ -102,6 +102,12 @@ WorldCup::~WorldCup()
     delete G[i];
   }
   delete G;
+
+  for (int i=0; i<16; i++)
+  {
+    delete BracketPhase[i];
+  }
+  delete BracketPhase;
 }
 
 
@@ -112,35 +118,44 @@ WorldCup::~WorldCup()
 
 void WorldCup::groupPhase()
 {
-  groupMatches(A);
-  groupMatches(B);
-  groupMatches(C);
-  groupMatches(D);
-  groupMatches(E);
-  groupMatches(F);
-  groupMatches(G);
-  groupMatches(H);
+  groupMatches(A,'A');
+  groupMatches(B,'B');
+  groupMatches(C,'C');
+  groupMatches(D,'D');
+  groupMatches(E,'E');
+  groupMatches(F,'F');
+  groupMatches(G,'G');
+  groupMatches(H,'H');
 }
 
-void WorldCup::groupMatches(Country** group)
+void WorldCup::groupMatches(Country** group, char letter)
 {
-  std::cout << "---------- GROUP ---------- \n";
+  std::cout << "---------- GROUP " << letter << " ---------- \n";
   groupMatch(group,0,1);
   groupMatch(group,2,3);
   groupMatch(group,0,2);
   groupMatch(group,3,1);
   groupMatch(group,3,0);
   groupMatch(group,1,2);
+  std::cout << '\n' ;
 }
 
 void WorldCup::groupMatch(Country** group, int x, int y)
 {
   int scoreX=0, scoreY=0;
   cout << group[x]->getName() << " vs. " << group[y]->getName() << "\n";
+  // Score X team
   cout << "  " << group[x]->getName() << ": " ;
   cin >> scoreX;
+  group[x]->addGoalsFavor(scoreX);
+  group[y]->addGoalsAgainst(scoreX);
+
+  // Score Y team
   cout << "  " << group[y]->getName() << ": " ;
   cin >> scoreY;
+  group[y]->addGoalsFavor(scoreY);
+  group[x]->addGoalsAgainst(scoreY);
+
   if(scoreX > scoreY)
   {
     group[x]->addPoints(3);
@@ -279,19 +294,40 @@ void WorldCup::bracketMatch(int x, int y, int counter)
 void WorldCup::selectionSort(Country** group)
 {
   Country* temp ;
+  // sorts an array by repeatedly finding the minimum element from unsorted part and putting it at the end
   for (int lastIndex=3 ; lastIndex>=1 ; lastIndex--)
   {
-    int largestIndex = 0 ;
+    int smallestIndex = 0 ;
+    // Gets the smallest object index in the range
     for (int currentIndex=1 ; currentIndex <(lastIndex+1) ; currentIndex++)
     {
-      if (group[currentIndex]->getPoints() < group[largestIndex]->getPoints() )
+      // Case 1: currentIndex has less points
+      if (group[currentIndex]->getPoints() < group[smallestIndex]->getPoints() )
       {
-        largestIndex = currentIndex ;
+        smallestIndex = currentIndex ;
+      }
+      // Case 2: same amount of points
+      else
+      {
+        // Case 2.1: currentIndex has a worse point difference
+        if (group[currentIndex]->getGoalDifference() < group[smallestIndex]->getGoalDifference())
+        {
+          smallestIndex = currentIndex ;
+        }
+        // Case 2.2: same point difference, look at goals scored
+        else
+        {
+          // Case 2.2.3: currentIndex has less goals in favor
+          if (group[currentIndex]->getGoalsFavor() < group[smallestIndex]->getGoalsFavor())
+          {
+            smallestIndex = currentIndex ;
+          }
+        }
       }
     }
-    // Swap
-    temp = group[largestIndex] ;
-    group[largestIndex] = group[lastIndex] ;
+    // Swaps the smallest index object with the lastIndex object
+    temp = group[smallestIndex] ;
+    group[smallestIndex] = group[lastIndex] ;
     group[lastIndex] = temp ;
   }
 }
